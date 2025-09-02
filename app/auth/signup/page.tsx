@@ -55,22 +55,22 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="flex items-center justify-center h-screen bg-gray-100">
+    <div className="flex items-center justify-center h-screen bg-gray-900">
       <form
         onSubmit={handleSubmit}
         className="bg-white p-6 rounded-lg shadow-md w-96"
       >
-        <h2 className="text-2xl font-bold mb-4">Sign Up</h2>
+        <h2 className="text-2xl font-bold mb-4 text-blue-500">Sign Up</h2>
 
         {error && <p className="text-red-500 mb-2">{error}</p>}
 
         <div className="mb-3">
-          <label className="block mb-1">Name</label>
+          <label className="block mb-1 text-gray-900">Name</label>
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full border px-3 py-2 rounded"
+            className="w-full border px-3 py-2 rounded bg-amber-500"
             required
           />
         </div>
@@ -81,7 +81,7 @@ export default function SignupPage() {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full border px-3 py-2 rounded"
+            className="w-full border px-3 py-2 rounded  bg-amber-500"
             required
           />
         </div>
@@ -92,7 +92,7 @@ export default function SignupPage() {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full border px-3 py-2 rounded"
+            className="w-full border px-3 py-2 rounded  bg-amber-500"
             required
           />
         </div>
