@@ -4,70 +4,72 @@ import bcrypt from "bcryptjs";
 import { connectDB } from "@/lib/mongodb";
 import User from "@/models/User";
 
-const handler = NextAuth({
-    providers: [
-        CredentialsProvider({
-            name: "Credentials",
-            credentials: {
-                email: { label: "Email", type: "text" },
-                password: { label: "Password", type: "password" },
-            },
-            async authorize(credentials: any) {
-                await connectDB();
+export const authOptions = {
+  providers: [
+    CredentialsProvider({
+      name: "Credentials",
+      credentials: {
+        email: { label: "Email", type: "text" },
+        password: { label: "Password", type: "password" },
+      },
+      async authorize(credentials: any) {
+        await connectDB();
 
-                const user = await User.findOne({ email: credentials.email });
-                if (!user) {
-                    throw new Error("Invalid email or password");
-                }
+        const user = await User.findOne({ email: credentials.email });
+        if (!user) {
+          throw new Error("Invalid email or password");
+        }
 
-                const isPasswordValid = await bcrypt.compare(
-                    credentials.password,
-                    user.password
-                );
+        const isPasswordValid = await bcrypt.compare(
+          credentials.password,
+          user.password
+        );
 
-                if (!isPasswordValid) {
-                    throw new Error("Invalid email or password");
-                }
+        if (!isPasswordValid) {
+          throw new Error("Invalid email or password");
+        }
 
-                return {
-                    id: user._id.toString(),
-                    name: user.name,
-                    email: user.email,
-                    role: user.role,
-                };
-            },
-        }),
-    ],
+        return {
+          id: user._id.toString(),
+          name: user.name,
+          email: user.email,
+          role: user.role,
+        };
+      },
+    }),
+  ],
 
-    callbacks: {
-        async jwt({ token, user }) {
-            if (user) {
-                token.role = (user as any).role;
-            }
-            return token;
-        },
-        async session({ session, token }) {
-            if (token) {
-                (session.user as any).id = token.sub;
-                (session.user as any).role = token.role;
-            }
-            return session;
-        },
+  callbacks: {
+    async jwt({ token, user }) {
+      if (user) {
+        token.role = (user as any).role;
+      }
+      return token;
     },
-
-    pages: {
-        signIn: "/auth/signin", // optional custom page
+    async session({ session, token }) {
+      if (token) {
+        (session.user as any).id = token.sub;
+        (session.user as any).role = token.role;
+      }
+      return session;
     },
+  },
 
-    session: {
-        strategy: "jwt",
-    },
+  pages: {
+    signIn: "/auth/signin",
+  },
 
-    secret: process.env.NEXTAUTH_SECRET,
-});
+  session: {
+    strategy: "jwt",
+  },
+
+  secret: process.env.NEXTAUTH_SECRET,
+};
+
+// export handler using authOptions
+const handler = NextAuth(authOptions);
 
 export { handler as GET, handler as POST };
-
 
 
 
