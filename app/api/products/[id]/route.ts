@@ -133,12 +133,12 @@ export async function DELETE(
         }
 
         const session = await getServerSession(authOptions);
-        if (!session || session.user.role !== 'Merchant') {
+        if (!session || session.user.role !== 'Merchant' && session.user.role !== 'Admin') {
             return NextResponse.json(
                 { message: 'Unauthorized, you can not be delete the product' },
                 { status: 400 }
             )
-        }
+        } 
 
         const getProduct = await Product.findById(id);
         if (!getProduct) {
@@ -148,12 +148,18 @@ export async function DELETE(
             )
         }
 
-        const deletedProduct = await Product.findOneAndDelete(
-            { 
-                _id: id, 
-                merchantId: new mongoose.Types.ObjectId(session.user.id) 
-            }
-        )
+        let deletedProduct;
+        
+        if(session.user.role === 'Merchant'){
+            deletedProduct = await Product.findOneAndDelete(
+                { 
+                    _id: id, 
+                    merchantId: new mongoose.Types.ObjectId(session.user.id) 
+                }
+            ) 
+        } else if(session.user.role === 'Admin'){
+            deletedProduct = await Product.findByIdAndDelete(id);
+        }
 
         if (!deletedProduct) {
             return NextResponse.json(
