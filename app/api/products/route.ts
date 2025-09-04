@@ -6,6 +6,7 @@ import { authOptions } from "../auth/[...nextauth]/route";
 import { getMerchantProducts } from "@/app/services/product/getMerchantProducts";
 import cloudinary from "@/lib/cloudinary";
 import mongoose from "mongoose";
+import { getFilteredProducts } from "@/lib/utils/productQuery";
 
 // type ProductRequestBody = {
 //     name: string,
@@ -101,21 +102,45 @@ export async function GET(req: Request) {
 
         const url = new URL(req.url);
         const merchantOnly = url.searchParams.get('merchant') === 'true';
-        let products;
 
         if(merchantOnly){
             
             return await getMerchantProducts();
-        } else{
-            products = await Product.find().sort({ createdAt: -1 });
-        }
+        } 
+
+        // Extract Query Params
+        const page = parseInt(url.searchParams.get('page') || '1', 10);
+        const limit = parseInt(url.searchParams.get('limit') || '10', 10);
+        const search = url.searchParams.get("search") || undefined;
+        const sort = url.searchParams.get("sort") || undefined;
+        const category = url.searchParams.get("category") || undefined;
+        const minPrice = url.searchParams.get("minPrice")
+            ? Number(url.searchParams.get("minPrice"))
+            : undefined;
+
+        const maxPrice = url.searchParams.get("maxPrice")
+            ? Number(url.searchParams.get("maxPrice"))
+            : undefined;
+        const inStock = url.searchParams.get("inStock") === "true" ? true : undefined;
+
+        // Cal Utils
+        const { products, pagination } = await getFilteredProducts({
+            page,
+            limit,
+            search,
+            sort,
+            category,
+            minPrice,
+            maxPrice,
+            inStock,
+        })
         
         if (!products || products.length === 0) {
             return NextResponse.json({ message: 'No Products Found' }, { status: 404 });
         }
 
         return NextResponse.json(
-            { message: 'Product Fetched Successfully', products: products },
+            { message: 'Product Fetched Successfully', products: products, pagination },
             { status: 200 }
         )
     } catch (err) {
