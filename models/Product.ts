@@ -5,7 +5,7 @@ export interface IProduct extends Document{
     description: string,
     price: number,
     stock: number,
-    images: string[],
+    images:  { url: string; public_id: string }[];
     category: 'Shirts' | 'Pants' | 'Trousers' | 'Saree',
     merchantId:  mongoose.Types.ObjectId
 }
@@ -16,7 +16,12 @@ const productSchema : Schema<IProduct> = new Schema(
         description: { type: String, required: true },
         price: { type: Number, required: true  },
         stock: { type: Number, required: true  },
-        images: [{ type: String, required: true  }],
+        images: [
+            {
+                url: { type: String, required: true },
+                public_id: { type: String, required: true }
+            }
+        ],
         category: { type: String, enum: [ 'Shirts', 'Pants', 'Trousers', 'Saree' ] ,required: true  },
         merchantId: { type: Schema.Types.ObjectId, required: true, ref: 'User'  }
     },
