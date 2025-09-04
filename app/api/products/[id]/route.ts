@@ -8,15 +8,15 @@ import mongoose from "mongoose";
 // Get Product By ID
 export async function GET(
     req: Request,
-    { params }: { params: { id: string } }  
-){
+    { params }: { params: { id: string } }
+) {
     try {
         await connectDB();
 
         const { id } = params;
-        
+
         const getProduct = await Product.findById(id);
-        if(!getProduct){
+        if (!getProduct) {
             return NextResponse.json(
                 { message: 'Product not found' },
                 { status: 400 }
@@ -29,20 +29,20 @@ export async function GET(
         )
     } catch (err) {
         console.log('Error while Fetch Product by ID', err);
-        return NextResponse.json({ message: 'Server Error' },  { status: 500 });
+        return NextResponse.json({ message: 'Server Error' }, { status: 500 });
     }
 }
 
 // Update Product by ID
 export async function PUT(
     req: Request,
-    { params } : { params: { id: string } }  
-){
+    { params }: { params: { id: string } }
+) {
     try {
         await connectDB();
-        
+
         const { id } = await params;
-        if(!mongoose.Types.ObjectId.isValid(id)){
+        if (!mongoose.Types.ObjectId.isValid(id)) {
             return NextResponse.json(
                 { message: 'Invalid Product ID' },
                 { status: 400 }
@@ -50,46 +50,46 @@ export async function PUT(
         }
 
         const session = await getServerSession(authOptions);
-        if(!session || session.user.role !== 'Merchant'){
+        if (!session || session.user.role !== 'Merchant') {
             return NextResponse.json(
                 { message: 'Unauthorized, you can not be update the product' },
                 { status: 400 }
             )
         }
 
-        const getProduct =  await Product.findById(id);
-        if(!getProduct){
+        const getProduct = await Product.findById(id);
+        if (!getProduct) {
             return NextResponse.json(
                 { message: 'Product not found' },
                 { status: 404 }
             )
         }
-        
+
         const { name, description, price, stock, images, category } = await req.json();
         const updates: Record<string, any> = {};
-        if(typeof name === 'string') updates.name = name;
-        if(typeof description === 'string') updates.description = description;
+        if (typeof name === 'string') updates.name = name;
+        if (typeof description === 'string') updates.description = description;
 
-        if(typeof price === 'number'){
-            if(price <= 0){
+        if (typeof price === 'number') {
+            if (price <= 0) {
                 return NextResponse.json({ message: 'Price should be above then 0' }, { status: 400 })
             }
 
             updates.price = price;
         }
 
-        if(typeof stock === 'number'){
-            if(stock <= 0){
+        if (typeof stock === 'number') {
+            if (stock <= 0) {
                 return NextResponse.json({ message: 'Stock should be above then 0' }, { status: 400 })
             }
 
             updates.stock = stock;
         }
 
-        if(Array.isArray(images)) updates.images = images;
-        if(typeof category === 'string') updates.category = category;
+        if (Array.isArray(images)) updates.images = images;
+        if (typeof category === 'string') updates.category = category;
 
-        
+
 
         const updatedProduct = await Product.findByIdAndUpdate(
             { _id: id, merchantId: new mongoose.Types.ObjectId(session.user.id) },
@@ -97,7 +97,7 @@ export async function PUT(
             { new: true, runValidators: true }
         )
 
-        if(!updatedProduct){
+        if (!updatedProduct) {
             return NextResponse.json(
                 { message: 'Product not found' },
                 { status: 404 }
@@ -113,5 +113,64 @@ export async function PUT(
     } catch (err) {
         console.log('Error while Update Product', err);
         return NextResponse.json({ message: 'Server Error' }, { status: 500 })
+    }
+}
+
+// Delete Product by ID
+export async function DELETE(
+    req: Request,
+    { params }: { params: { id: string } }
+) {
+    try {
+        await connectDB();
+
+        const { id } = await params;
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return NextResponse.json(
+                { message: 'Invalid Product ID' },
+                { status: 400 }
+            )
+        }
+
+        const session = await getServerSession(authOptions);
+        if (!session || session.user.role !== 'Merchant') {
+            return NextResponse.json(
+                { message: 'Unauthorized, you can not be delete the product' },
+                { status: 400 }
+            )
+        }
+
+        const getProduct = await Product.findById(id);
+        if (!getProduct) {
+            return NextResponse.json(
+                { message: 'Product not found' },
+                { status: 400 }
+            )
+        }
+
+        const deletedProduct = await Product.findOneAndDelete(
+            { 
+                _id: id, 
+                merchantId: new mongoose.Types.ObjectId(session.user.id) 
+            }
+        )
+
+        if (!deletedProduct) {
+            return NextResponse.json(
+                { message: "Product not found or not owned by merchant" },
+                { status: 404 }
+            );
+        }
+
+        return NextResponse.json(
+            { message: 'Product Deleted Successfully', product: deletedProduct },
+            { status: 200 }
+        )
+    } catch (err) {
+        console.log('Error while deleting Product', err);
+        return NextResponse.json(
+            { message: 'Server Error' },
+            { status: 500 }
+        )
     }
 }
